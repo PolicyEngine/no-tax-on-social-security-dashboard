@@ -1,0 +1,64 @@
+{
+  "budget": {
+    "budgetary_impact": -105000000000,
+    "tax_revenue_impact": -105000000000,
+    "baseline_net_income": 19500000000000
+  },
+  "decile": {
+    "relative": {
+      "1": 0.0005,
+      "2": 0.0012,
+      "3": 0.0031,
+      "4": 0.0054,
+      "5": 0.0072,
+      "6": 0.0088,
+      "7": 0.0091,
+      "8": 0.0083,
+      "9": 0.0067,
+      "10": 0.0038
+    },
+    "average": {
+      "1": 25,
+      "2": 70,
+      "3": 190,
+      "4": 360,
+      "5": 540,
+      "6": 720,
+      "7": 880,
+      "8": 980,
+      "9": 1010,
+      "10": 890
+    }
+  },
+  "poverty": {
+    "all": { "baseline": 0.112, "reform": 0.108 },
+    "senior": { "baseline": 0.101, "reform": 0.089 },
+    "child": { "baseline": 0.135, "reform": 0.134 },
+    "adult": { "baseline": 0.104, "reform": 0.101 }
+  },
+  "intra_decile": {
+    "all": {
+      "Gain more than 5%": 0.04,
+      "Gain less than 5%": 0.46,
+      "No change": 0.48,
+      "Lose less than 5%": 0.01,
+      "Lose more than 5%": 0.01
+    },
+    "deciles": {
+      "Gain more than 5%": [0.01, 0.02, 0.03, 0.04, 0.05, 0.06, 0.06, 0.05, 0.04, 0.02],
+      "Gain less than 5%": [0.14, 0.22, 0.34, 0.44, 0.52, 0.58, 0.62, 0.63, 0.6, 0.5],
+      "No change": [0.84, 0.75, 0.62, 0.51, 0.42, 0.35, 0.31, 0.31, 0.35, 0.47],
+      "Lose less than 5%": [0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01],
+      "Lose more than 5%": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+    }
+  },
+  "metadata": {
+    "time_period": 2026,
+    "region": "us",
+    "dataset": "enhanced_cps",
+    "api_base": "https://api.policyengine.org",
+    "baseline_policy_id": 2,
+    "reform_policy_id": 0,
+    "generated_at": "1970-01-01T00:00:00+00:00"
+  }
+}
