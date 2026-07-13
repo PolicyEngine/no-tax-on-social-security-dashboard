@@ -27,20 +27,29 @@ const BANDS: { key: WinnerLoserBand; label: string; color: string }[] = [
 ]
 
 /**
- * Stacked bar of winner/loser shares by income decile.
- * TODO: Implement — refine tooltip, stack-to-100 normalisation, mobile sizing.
+ * Builds one row per income decile, each holding the share (0-1) of households
+ * in every winner/loser band. Exported so tests can assert the stack sums to ~1.
  */
-export function WinnersLosersByDecileChart({ data }: Props) {
-  const rows = Array.from({ length: 10 }, (_, i) => {
+export function buildWinnersLosersRows(data: IntraDecile) {
+  return Array.from({ length: 10 }, (_, i) => {
     const row: Record<string, number> = { decile: i + 1 }
     for (const band of BANDS) row[band.key] = data.deciles[band.key]?.[i] ?? 0
     return row
   })
+}
+
+/** Stacked (100%-normalised) bar of winner/loser shares by income decile. */
+export function WinnersLosersByDecileChart({ data }: Props) {
+  const rows = buildWinnersLosersRows(data)
 
   return (
-    <ChartContainer title="Winners and losers by income decile">
+    <ChartContainer
+      title="Winners and losers by income decile"
+      subtitle="Share of households in each outcome band, by income decile"
+      downloadFilename="winners-losers-by-decile"
+    >
       <ResponsiveContainer width="100%" height={360}>
-        <BarChart data={rows} stackOffset="expand">
+        <BarChart data={rows} stackOffset="expand" margin={{ top: 8, right: 8, bottom: 8, left: 8 }}>
           <CartesianGrid stroke="var(--border)" vertical={false} />
           <XAxis
             dataKey="decile"
@@ -54,8 +63,12 @@ export function WinnersLosersByDecileChart({ data }: Props) {
             tickFormatter={(v: number) => formatPercent(v)}
             tick={{ fontSize: 12, fontFamily: 'var(--font-sans)' }}
           />
-          <Tooltip separator=": " formatter={(v) => formatPercent(Number(v))} />
-          <Legend />
+          <Tooltip
+            separator=": "
+            labelFormatter={(label) => `Decile ${label}`}
+            formatter={(v) => formatPercent(Number(v))}
+          />
+          <Legend wrapperStyle={{ fontSize: 12, fontFamily: 'var(--font-sans)' }} />
           {BANDS.map((band) => (
             <Bar
               key={band.key}

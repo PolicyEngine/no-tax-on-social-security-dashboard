@@ -34,7 +34,9 @@ API_BASE = "https://api.policyengine.org"
 COUNTRY = "us"
 REGION = "us"
 TIME_PERIOD = 2026
-DATASET = "enhanced_cps"
+# NOTE: the economy endpoint no longer accepts an explicit `dataset` query param
+# ("enhanced_cps" is deprecated). Omitting it uses the certified PolicyEngine
+# bundle dataset — the same one that powers policyengine.org.
 BASELINE_POLICY_ID = 2  # US current law
 
 POLL_INTERVAL_SECONDS = 5
@@ -78,7 +80,7 @@ def create_reform_policy() -> int:
 def fetch_economy_impact(policy_id: int) -> dict:
     """GET the economy comparison for 2026, polling until status 'ok'."""
     query = urllib.parse.urlencode(
-        {"region": REGION, "time_period": TIME_PERIOD, "dataset": DATASET}
+        {"region": REGION, "time_period": TIME_PERIOD}
     )
     url = (
         f"{API_BASE}/{COUNTRY}/economy/{policy_id}"
@@ -105,7 +107,8 @@ def trim(result: dict) -> dict:
     """Trim the full economy result to the fields the dashboard renders."""
     budget = result["budget"]
     decile = result["decile"]
-    poverty = result["poverty"]["poverty"]["age"]
+    # Economy result shape: result["poverty"]["poverty"] -> {child, adult, senior, all}
+    poverty = result["poverty"]["poverty"]
     intra = result["intra_decile"]
 
     return {
@@ -144,7 +147,7 @@ def main() -> None:
     impact["metadata"] = {
         "time_period": TIME_PERIOD,
         "region": REGION,
-        "dataset": DATASET,
+        "dataset": result.get("data_version") or "policyengine-bundle",
         "api_base": API_BASE,
         "baseline_policy_id": BASELINE_POLICY_ID,
         "reform_policy_id": policy_id,

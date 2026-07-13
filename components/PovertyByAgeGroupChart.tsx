@@ -24,21 +24,27 @@ const GROUPS: { key: keyof Poverty; label: string }[] = [
   { key: 'all', label: 'All' },
 ]
 
-/**
- * Grouped bar of SPM poverty rate, baseline vs reform, by age group.
- * TODO: Implement — refine tooltip formatting and mobile sizing.
- */
-export function PovertyByAgeGroupChart({ data }: Props) {
-  const rows = GROUPS.map((g) => ({
+/** One row per age group with baseline and reform SPM poverty rates. */
+export function buildPovertyRows(data: Poverty) {
+  return GROUPS.map((g) => ({
     group: g.label,
     baseline: data[g.key].baseline,
     reform: data[g.key].reform,
   }))
+}
+
+/** Grouped bar of SPM poverty rate, baseline vs reform, by age group. */
+export function PovertyByAgeGroupChart({ data }: Props) {
+  const rows = buildPovertyRows(data)
 
   return (
-    <ChartContainer title="Poverty rate by age group, baseline vs reform">
+    <ChartContainer
+      title="Poverty rate by age group, baseline vs reform"
+      subtitle="Supplemental Poverty Measure rate under current law and HR 904 (2026)"
+      downloadFilename="poverty-by-age-group"
+    >
       <ResponsiveContainer width="100%" height={360}>
-        <BarChart data={rows}>
+        <BarChart data={rows} margin={{ top: 8, right: 8, bottom: 8, left: 8 }}>
           <CartesianGrid stroke="var(--border)" vertical={false} />
           <XAxis
             dataKey="group"
@@ -53,7 +59,7 @@ export function PovertyByAgeGroupChart({ data }: Props) {
             tick={{ fontSize: 12, fontFamily: 'var(--font-sans)' }}
           />
           <Tooltip separator=": " formatter={(v) => formatPercent(Number(v))} />
-          <Legend />
+          <Legend wrapperStyle={{ fontSize: 12, fontFamily: 'var(--font-sans)' }} />
           <Bar dataKey="baseline" name="Baseline" fill="var(--chart-5)" />
           <Bar dataKey="reform" name="Under HR 904" fill="var(--chart-1)" />
         </BarChart>
