@@ -1,20 +1,33 @@
 # no-tax-on-social-security-dashboard
 
 Analysis of HR 904, which would eliminate federal income taxation of Social
-Security benefits by zeroing out the IRC 86 taxability rates. The dashboard
-shows the reform's budgetary cost, its effect on poverty (overall and among
-seniors), the average household income change by income decile, and the share
-of winners and losers by decile (single year, 2026).
+Security benefits by zeroing out the IRC 86 taxability rates (single year, 2026).
+
+The dashboard has **four pages** (Next.js App Router routes):
+
+1. `/` — **policy explanation**: provision-by-provision prose, primary-source
+   links, and the parameter-change table (`ParameterTable` ← `parameters.json`).
+2. `/validation` — **how the numbers were produced**: benchmark comparison
+   (`BenchmarkComparisonTable`), model/data versions (`ModelVersionsCard`),
+   methodology note, and the SSA data-calibration check (`CalibrationSection`),
+   all ← `validation.json` + `impact.json`.
+3. `/impacts` — **economic impact**: headline MetricCards + the three retained
+   distributional charts, ← `impact.json`.
+4. `/household` — **example households**: `HouseholdControls` (example selector +
+   other-income slider) and `HouseholdNetIncomeChart`, ← `household.json`.
+
+Shared nav lives in `components/SiteHeader.tsx` (ui-kit `Header` + Next.js
+`Link` for basePath-safe internal routing).
 
 ## Architecture
 
 - Next.js App Router with Tailwind CSS v4 and the `@policyengine/ui-kit` theme
-- `@policyengine/ui-kit` for standard UI components (Header, MetricCard, ChartContainer)
-- Recharts for the custom distributional charts
+- `@policyengine/ui-kit` for standard UI components (Header, MetricCard, ChartContainer, DataTable, Card, SelectInput, SliderInput)
+- Recharts for the custom distributional and household charts
 - **Data pattern: precomputed JSON.** The reform is a single fixed definition,
   so the entire result set is computed once by `scripts/precompute.py` and shipped
-  as static JSON at `public/data/impact.json`. The frontend imports it directly;
-  there is no runtime backend.
+  as static JSON at `public/data/{impact,parameters,validation,household}.json`.
+  The frontend imports these directly; there is no runtime backend.
 
 ### Precompute (data generation)
 

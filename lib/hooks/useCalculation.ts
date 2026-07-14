@@ -1,6 +1,16 @@
 import { useQuery } from '@tanstack/react-query'
-import { getImpact } from '../api/client'
-import type { Impact } from '../api/types'
+import {
+  getImpact,
+  getParameters,
+  getValidation,
+  getHousehold,
+} from '../api/client'
+import type {
+  Impact,
+  Parameters,
+  Validation,
+  Household,
+} from '../api/types'
 
 /**
  * Loads the precomputed HR 904 economy-wide impact.
@@ -13,6 +23,33 @@ export function useImpact() {
   return useQuery<Impact>({
     queryKey: ['impact'],
     queryFn: getImpact,
+    staleTime: Infinity,
+  })
+}
+
+/** Loads the precomputed HR 904 parameter-change table (policy page). */
+export function useParameters() {
+  return useQuery<Parameters>({
+    queryKey: ['parameters'],
+    queryFn: getParameters,
+    staleTime: Infinity,
+  })
+}
+
+/** Loads benchmarks, model/data versions, and the SSA calibration check (validation page). */
+export function useValidation() {
+  return useQuery<Validation>({
+    queryKey: ['validation'],
+    queryFn: getValidation,
+    staleTime: Infinity,
+  })
+}
+
+/** Loads precomputed household-example series (household page). */
+export function useHousehold() {
+  return useQuery<Household>({
+    queryKey: ['household'],
+    queryFn: getHousehold,
     staleTime: Infinity,
   })
 }
