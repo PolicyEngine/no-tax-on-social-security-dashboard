@@ -103,13 +103,13 @@ BANDS = [
 ]
 
 
-def _get_json(url: str) -> dict:
+def _get_json(url: str, timeout: int = 120) -> dict:
     req = urllib.request.Request(url, headers={"Accept": "application/json"})
-    with urllib.request.urlopen(req, timeout=120) as resp:
+    with urllib.request.urlopen(req, timeout=timeout) as resp:
         return json.load(resp)
 
 
-def _post_json(url: str, payload: dict) -> dict:
+def _post_json(url: str, payload: dict, timeout: int = 120) -> dict:
     body = json.dumps(payload).encode("utf-8")
     req = urllib.request.Request(
         url,
@@ -117,8 +117,26 @@ def _post_json(url: str, payload: dict) -> dict:
         headers={"Content-Type": "application/json", "Accept": "application/json"},
         method="POST",
     )
-    with urllib.request.urlopen(req, timeout=120) as resp:
+    with urllib.request.urlopen(req, timeout=timeout) as resp:
         return json.load(resp)
+
+
+def fetch_metadata() -> dict:
+    """GET /{country}/metadata — the authoritative model + parameter source.
+
+    The hosted v1 API has no per-parameter endpoint (``/us/parameter/{path}``
+    returns 404), so current-law parameter values and the model version are
+    read from the single metadata document that powers policyengine.org.
+    """
+    return _get_json(f"{API_BASE}/{COUNTRY}/metadata")["result"]
+
+
+def _value_at(values: dict, date: str) -> float | None:
+    """Return the parameter value effective on ``date`` (latest key <= date)."""
+    applicable = [d for d in values if d <= date]
+    if not applicable:
+        return None
+    return values[max(applicable)]
 
 
 def create_reform_policy() -> int:
@@ -196,29 +214,43 @@ def _write(path: Path, obj: dict) -> None:
     print(f"Wrote {path}")
 
 
-def write_parameters(metadata: dict) -> None:
+def write_parameters(metadata: dict, api_metadata: dict) -> None:
     """parameters.json — the five reform params with current-law values.
 
-    TODO(backend-builder): fetch each current-law value at 2026 from
-    GET {API_BASE}/us/parameter/{param} (authoritative, never hardcoded).
-    This stub emits placeholder current-law rates so the frontend builds.
+    Current-law values are read (never hardcoded) from the API metadata
+    parameters block at their 2026 value; reform values (0) and effective
+    dates come from reform.json.
     """
-    placeholder_current_law = {
-        "gov.irs.social_security.taxability.rate.base.excess": 0.5,
-        "gov.irs.social_security.taxability.rate.base.benefit_cap": 0.5,
-        "gov.irs.social_security.taxability.rate.additional.excess": 0.85,
-        "gov.irs.social_security.taxability.rate.additional.benefit_cap": 0.85,
-        "gov.irs.social_security.taxability.rate.additional.bracket": 0.85,
-    }
-    rows = [
-        {
-            "parameter": p,
-            "current_law": placeholder_current_law[p],
-            "reform_value": 0,
-            "effective": "2026-01-01",
-        }
-        for p in REFORM_PARAMS
-    ]
+    with open(REFORM_PATH) as f:
+        reform = json.load(f)
+    api_params = api_metadata["parameters"]
+    effective_date = f"{TIME_PERIOD}-01-01"
+
+    rows = []
+    for p in REFORM_PARAMS:
+        param_meta = api_params.get(p)
+        current_law = (
+            _value_at(param_meta["values"], effective_date)
+            if param_meta and "values" in param_meta
+            else None
+        )
+        # Reform value + effective date derived from reform.json (authoritative).
+        reform_entry = reform.get(p, {})
+        reform_value = next(iter(reform_entry.values()), 0) if reform_entry else 0
+        effective = (
+            next(iter(reform_entry)).split(".")[0]
+            if reform_entry
+            else effective_date
+        )
+        rows.append(
+            {
+                "parameter": p,
+                "label": (param_meta or {}).get("label", p),
+                "current_law": current_law,
+                "reform_value": reform_value,
+                "effective": effective,
+            }
+        )
     _write(
         PARAMETERS_PATH,
         {
@@ -231,53 +263,190 @@ def write_parameters(metadata: dict) -> None:
     )
 
 
-def write_validation(metadata: dict) -> None:
-    """validation.json — benchmarks, versions, and the SSA calibration check.
+TOLERANCE = 0.10  # calibration targets within +/-10% relative error are "within tolerance"
 
-    TODO(backend-builder): fetch the live SSA calibration diagnostics from
-    GET {CALIBRATION_API_BASE}/calibration/dashboard/api/populace/target-diagnostics?source=ssa
-    and populate release_id / targets_checked / share_within_tolerance /
-    out_of_tolerance_targets. This stub emits an empty calibration block.
+
+def fetch_ssa_calibration() -> dict:
+    """Fetch the live SSA calibration diagnostics; degrade gracefully on failure.
+
+    Returns a calibration block with release_id, targets_checked,
+    share_within_tolerance, and any out_of_tolerance_targets (|relative error|
+    > 10%). If the calibration API is unreachable the block records the
+    omission via ``available: False`` rather than failing the build.
     """
+    url = (
+        f"{CALIBRATION_API_BASE}/calibration/dashboard/api/populace/"
+        f"target-diagnostics?source=ssa"
+    )
+    try:
+        d = _get_json(url, timeout=60)
+    except Exception as exc:  # noqa: BLE001 — never fail the build on this
+        print(f"  WARNING: SSA calibration API unreachable ({exc!r}); omitting.")
+        return {
+            "available": False,
+            "source": "ssa",
+            "release_id": None,
+            "targets_checked": 0,
+            "share_within_tolerance": 0,
+            "out_of_tolerance_targets": [],
+            "note": (
+                "The live PolicyEngine calibration diagnostics API was "
+                "unreachable at build time, so the SSA data-calibration check "
+                "could not be included in this run."
+            ),
+        }
+
+    targets = [t for t in (d.get("targets") or []) if t.get("source") == "ssa"]
+    within = [t for t in targets if abs(t.get("relative_error", 0.0)) <= TOLERANCE]
+    # Human-readable labels (string[]) so the frontend can render them directly.
+    out_of_tolerance = [
+        f"{t.get('breakdown') or t.get('base_name') or t.get('name')} "
+        f"({t.get('relative_error', 0.0) * 100:+.1f}%)"
+        for t in targets
+        if abs(t.get("relative_error", 0.0)) > TOLERANCE
+    ]
+    targets_checked = len(targets)
+    share = (len(within) / targets_checked) if targets_checked else 0
+    return {
+        "available": True,
+        "source": "ssa",
+        "release_id": d.get("release_id"),
+        "metric": d.get("metric"),
+        "tolerance": TOLERANCE,
+        "targets_checked": targets_checked,
+        "within_tolerance": len(within),
+        "share_within_tolerance": share,
+        "out_of_tolerance_targets": out_of_tolerance,
+        "source_citation": (targets[0].get("source_citation") if targets else None),
+    }
+
+
+def write_validation(metadata: dict, api_metadata: dict) -> None:
+    """validation.json — benchmarks, versions, methodology, and SSA calibration."""
+    calibration = fetch_ssa_calibration()
+    methodology_note = (
+        "Static microsimulation (no behavioral response) on the certified "
+        "PolicyEngine bundle dataset, computed server-side by the hosted "
+        "PolicyEngine v1 API — the same engine that powers policyengine.org. "
+        f"All budgetary figures are SINGLE-YEAR {TIME_PERIOD}; do not "
+        "extrapolate a naive x10 for a ten-year total."
+    )
+    versions = {
+        "model_version": api_metadata.get("version"),
+        "data_version": metadata.get("dataset"),
+        "country_package": "policyengine-us",
+        "api_base": API_BASE,
+    }
     _write(
         VALIDATION_PATH,
         {
             "benchmarks": BENCHMARKS,
-            "calibration": {
-                "release_id": "TODO-ssa-release-id",
-                "targets_checked": 0,
-                "share_within_tolerance": 0,
-                "out_of_tolerance_targets": [],
+            "policyengine_2026": {
+                "budgetary_impact": metadata.get("budgetary_impact"),
+                "note": (
+                    "PolicyEngine's own computed single-year 2026 revenue "
+                    "change (from impact.json)."
+                ),
             },
+            "versions": versions,
+            "methodology_note": methodology_note,
+            "calibration": calibration,
             "metadata": metadata,
         },
     )
 
 
+HOUSEHOLD_STATE = "TX"  # no state income tax -> isolates the federal SS-tax effect
+CALCULATE_TIMEOUT = 600
+
+
+def _build_situation(cfg: dict) -> dict:
+    """Build a single situation holding one household per OTHER_INCOME_POINTS point.
+
+    Each income point is an independent household (h_{i}) so the whole sweep is
+    computed in one fast /calculate call — household-level, NOT a microsim.
+    ``taxable_pension_income`` is used for other income because it flows into
+    AGI (unlike ``pension_income``, which does not).
+    """
+    yr = str(TIME_PERIOD)
+    ss = cfg["ss_benefit"]
+    married = cfg["married"]
+    people, tax_units, families, spm_units, marital_units, households = (
+        {}, {}, {}, {}, {}, {},
+    )
+    for i, oi in enumerate(OTHER_INCOME_POINTS):
+        head = f"head_{i}"
+        members = [head]
+        people[head] = {
+            "age": {yr: 67},
+            "social_security": {yr: ss // 2 if married else ss},
+            "taxable_pension_income": {yr: oi},
+        }
+        if married:
+            spouse = f"spouse_{i}"
+            people[spouse] = {
+                "age": {yr: 67},
+                "social_security": {yr: ss // 2},
+                "taxable_pension_income": {yr: 0},
+            }
+            members.append(spouse)
+        tax_units[f"tu_{i}"] = {"members": members}
+        families[f"fam_{i}"] = {"members": members}
+        spm_units[f"spm_{i}"] = {"members": members}
+        marital_units[f"mu_{i}"] = {"members": members}
+        households[f"h_{i}"] = {
+            "members": members,
+            "state_name": {yr: HOUSEHOLD_STATE},
+            "household_net_income": {yr: None},
+        }
+    return {
+        "people": people,
+        "tax_units": tax_units,
+        "families": families,
+        "spm_units": spm_units,
+        "marital_units": marital_units,
+        "households": households,
+    }
+
+
+def _net_income_series(situation: dict, reform: dict | None) -> list[float]:
+    payload = {"household": situation}
+    if reform is not None:
+        payload["policy"] = reform
+    resp = _post_json(
+        f"{API_BASE}/{COUNTRY}/calculate", payload, timeout=CALCULATE_TIMEOUT
+    )
+    if resp.get("status") == "error":
+        raise RuntimeError(f"/calculate error: {resp.get('message')}")
+    households = resp["result"]["households"]
+    return [
+        round(float(households[f"h_{i}"]["household_net_income"][str(TIME_PERIOD)]), 2)
+        for i in range(len(OTHER_INCOME_POINTS))
+    ]
+
+
 def write_household(metadata: dict) -> None:
     """household.json — baseline vs reform net-income series per example.
 
-    TODO(backend-builder): for each example household x each other-income point,
-    POST {API_BASE}/us/calculate (baseline) and with the reform, and read
-    household net income. Uses the FAST /household-style endpoint — NOT a
-    microsimulation (does not OOM). This stub emits placeholder linear series.
+    For each archetypal senior household, sweep other (non-SS) taxable income
+    and read household net income baseline vs HR 904 from the FAST /calculate
+    household endpoint (household-level, NOT a microsimulation — does not OOM).
     """
+    with open(REFORM_PATH) as f:
+        reform = json.load(f)
     examples = {}
     for key, cfg in HOUSEHOLD_EXAMPLES.items():
-        ss = cfg["ss_benefit"]
-        std = 30_000 if cfg["married"] else 15_000
-        baseline, reform = [], []
-        for oi in OTHER_INCOME_POINTS:
-            gross = oi + ss
-            taxable_base = max(gross - std, 0)
-            ss_taxed = min(0.85 * ss, taxable_base)
-            baseline.append(round(gross - 0.12 * taxable_base, 2))
-            reform.append(round(gross - 0.12 * max(taxable_base - ss_taxed, 0), 2))
+        print(f"  computing household example: {key}")
+        situation = _build_situation(cfg)
+        baseline = _net_income_series(situation, reform=None)
+        reform_series = _net_income_series(situation, reform=reform)
         examples[key] = {
             "label": cfg["label"],
+            "ss_benefit": cfg["ss_benefit"],
+            "state": HOUSEHOLD_STATE,
             "other_income": OTHER_INCOME_POINTS,
             "baseline_net_income": baseline,
-            "reform_net_income": reform,
+            "reform_net_income": reform_series,
         }
     _write(
         HOUSEHOLD_PATH,
@@ -292,6 +461,9 @@ def write_household(metadata: dict) -> None:
 
 
 def main() -> None:
+    print("Fetching model metadata (versions + current-law parameters)…")
+    api_metadata = fetch_metadata()
+
     print("Creating reform policy via the hosted PolicyEngine API…")
     policy_id = create_reform_policy()
     print(f"  reform policy_id = {policy_id}")
@@ -303,6 +475,8 @@ def main() -> None:
         "time_period": TIME_PERIOD,
         "region": REGION,
         "dataset": result.get("data_version") or "policyengine-bundle",
+        "model_version": api_metadata.get("version"),
+        "budgetary_impact": impact["budget"]["budgetary_impact"],
         "api_base": API_BASE,
         "baseline_policy_id": BASELINE_POLICY_ID,
         "reform_policy_id": policy_id,
@@ -313,8 +487,8 @@ def main() -> None:
     _write(OUTPUT_PATH, impact)
 
     # New four-page dashboard outputs (policy, validation, household).
-    write_parameters(metadata)
-    write_validation(metadata)
+    write_parameters(metadata, api_metadata)
+    write_validation(metadata, api_metadata)
     write_household(metadata)
 
 

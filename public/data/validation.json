@@ -17,19 +17,40 @@
       "note": "$98.9B for 2025; NOT directly comparable to the 2026 figure (different year, dataset version)."
     }
   ],
+  "policyengine_2026": {
+    "budgetary_impact": -114587818254.97015,
+    "note": "PolicyEngine's own computed single-year 2026 revenue change (from impact.json)."
+  },
+  "versions": {
+    "model_version": "1.764.6",
+    "data_version": "populace-us-2024-buildi-sparse-rmloss100-6e8e929-20260709T034135Z",
+    "country_package": "policyengine-us",
+    "api_base": "https://api.policyengine.org"
+  },
+  "methodology_note": "Static microsimulation (no behavioral response) on the certified PolicyEngine bundle dataset, computed server-side by the hosted PolicyEngine v1 API \u2014 the same engine that powers policyengine.org. All budgetary figures are SINGLE-YEAR 2026; do not extrapolate a naive x10 for a ten-year total.",
   "calibration": {
-    "release_id": "TODO-ssa-release-id",
-    "targets_checked": 0,
-    "share_within_tolerance": 0,
-    "out_of_tolerance_targets": []
+    "available": true,
+    "source": "ssa",
+    "release_id": "populace-us-2024-buildj-sparse-rmloss100-75d5add-20260710T094201Z",
+    "metric": "relative_error",
+    "tolerance": 0.1,
+    "targets_checked": 6,
+    "within_tolerance": 5,
+    "share_within_tolerance": 0.8333333333333334,
+    "out_of_tolerance_targets": [
+      "ssi payments (-12.5%)"
+    ],
+    "source_citation": "ssa | SSA Annual Statistical Supplement 2025 extracted OASDI and SSI target rows | ssa_oasdi_ssi_2024.csv | annual_statistical_supplement_2025 | https://www.ssa.gov/policy/docs/statcomps/supplement/2025/index.html"
   },
   "metadata": {
     "time_period": 2026,
     "region": "us",
-    "dataset": "TODO-dataset-version",
+    "dataset": "populace-us-2024-buildi-sparse-rmloss100-6e8e929-20260709T034135Z",
+    "model_version": "1.764.6",
+    "budgetary_impact": -114587818254.97015,
     "api_base": "https://api.policyengine.org",
     "baseline_policy_id": 2,
     "reform_policy_id": 97925,
-    "generated_at": "2026-07-14T12:29:10.878880+00:00"
+    "generated_at": "2026-07-14T12:53:39.623395+00:00"
   }
 }

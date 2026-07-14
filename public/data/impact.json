@@ -123,9 +123,11 @@
     "time_period": 2026,
     "region": "us",
     "dataset": "populace-us-2024-buildi-sparse-rmloss100-6e8e929-20260709T034135Z",
+    "model_version": "1.764.6",
+    "budgetary_impact": -114587818254.97015,
     "api_base": "https://api.policyengine.org",
     "baseline_policy_id": 2,
     "reform_policy_id": 97925,
-    "generated_at": "2026-07-13T19:16:37.028403+00:00"
+    "generated_at": "2026-07-14T12:53:39.623395+00:00"
   }
 }
