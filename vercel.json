@@ -1,6 +1,10 @@
 {
-  "framework": "nextjs",
+  "framework": null,
+  "buildCommand": "bun run build",
+  "outputDirectory": "out",
   "rewrites": [
-    { "source": "/_zones/no-tax-on-social-security-dashboard/_next/:path*", "destination": "/_next/:path*" }
+    { "source": "/_zones/no-tax-on-social-security-dashboard/_next/:path*", "destination": "/_next/:path*" },
+    { "source": "/us/no-tax-on-social-security-dashboard", "destination": "/" },
+    { "source": "/us/no-tax-on-social-security-dashboard/:path*", "destination": "/:path*" }
   ]
 }
