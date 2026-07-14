@@ -1,9 +1,9 @@
 'use client'
 
 import { useState } from 'react'
-import { MetricCard, SingleColumnLayout } from '@policyengine/ui-kit'
+import { MetricCard } from '@policyengine/ui-kit'
 import { useHousehold } from '@/lib/hooks/useCalculation'
-import { SiteHeader } from '@/components/SiteHeader'
+import { PageShell } from '@/components/PageShell'
 import { HouseholdControls } from '@/components/HouseholdControls'
 import {
   HouseholdNetIncomeChart,
@@ -36,10 +36,8 @@ export default function HouseholdPage() {
 
   return (
     <>
-      <SiteHeader />
-
-      <SingleColumnLayout className="bg-background text-foreground">
-        <main className="flex flex-col gap-8">
+      <PageShell>
+        <div className="flex flex-col gap-8">
         <header className="flex flex-col gap-2">
           <h1 className="text-3xl font-bold">
             How HR 904 affects example households
@@ -93,8 +91,8 @@ export default function HouseholdPage() {
             </section>
           </>
         )}
-        </main>
-      </SingleColumnLayout>
+        </div>
+      </PageShell>
     </>
   )
 }

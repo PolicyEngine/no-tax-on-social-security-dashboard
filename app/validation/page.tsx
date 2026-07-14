@@ -1,8 +1,7 @@
 'use client'
 
-import { SingleColumnLayout } from '@policyengine/ui-kit'
 import { useImpact, useValidation } from '@/lib/hooks/useCalculation'
-import { SiteHeader } from '@/components/SiteHeader'
+import { PageShell } from '@/components/PageShell'
 import { BenchmarkComparisonTable } from '@/components/BenchmarkComparisonTable'
 import { ModelVersionsCard } from '@/components/ModelVersionsCard'
 import { CalibrationSection } from '@/components/CalibrationSection'
@@ -17,10 +16,8 @@ export default function ValidationPage() {
 
   return (
     <>
-      <SiteHeader />
-
-      <SingleColumnLayout className="bg-background text-foreground">
-        <main className="flex flex-col gap-8">
+      <PageShell>
+        <div className="flex flex-col gap-8">
         <header className="flex flex-col gap-2">
           <h1 className="text-3xl font-bold">
             How we produced and checked these numbers
@@ -76,8 +73,8 @@ export default function ValidationPage() {
             <CalibrationSection calibration={validation.calibration} />
           )}
         </section>
-        </main>
-      </SingleColumnLayout>
+        </div>
+      </PageShell>
     </>
   )
 }
