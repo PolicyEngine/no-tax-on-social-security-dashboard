@@ -61,4 +61,28 @@ describe('Four-page dashboard', () => {
       expect(screen.getAllByText(label).length).toBeGreaterThan(0)
     }
   })
+
+  it('household page renders the representative presets and reform-lever controls from the real data', async () => {
+    renderWithClient(<HouseholdPage />)
+    // Preset cards (bundled household.json flows through the full page).
+    expect(
+      await screen.findByRole('heading', { name: /representative households/i }),
+    ).toBeInTheDocument()
+    for (const label of [
+      /average single retiree/i,
+      /average retired couple/i,
+      /senior still working part-time/i,
+      /higher-income couple/i,
+    ]) {
+      expect(screen.getByText(label)).toBeInTheDocument()
+    }
+    // The reform's levers are the controls.
+    for (const label of [
+      /filing status/i,
+      /annual social security benefit/i,
+      /other taxable income/i,
+    ]) {
+      expect(screen.getAllByText(label).length).toBeGreaterThan(0)
+    }
+  })
 })
