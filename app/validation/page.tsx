@@ -19,9 +19,9 @@ export default function ValidationPage() {
       <PageShell>
         <div className="flex flex-col gap-8">
         <header className="flex flex-col gap-2">
-          <h1 className="text-3xl font-bold">
+          <h2 className="text-2xl font-bold">
             How we produced and checked these numbers
-          </h1>
+          </h2>
           <p className="text-muted-foreground max-w-2xl">
             PolicyEngine&apos;s result next to external benchmarks, the model and
             data versions, the single-year methodology note, and the live

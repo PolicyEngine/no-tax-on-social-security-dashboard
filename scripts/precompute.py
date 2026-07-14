@@ -72,20 +72,52 @@ BENCHMARKS = [
     },
 ]
 
-# Archetypal senior households swept over other (non-SS) taxable income.
-HOUSEHOLD_EXAMPLES = {
-    "single_senior_20k_ss": {
-        "label": "Single filer, aged 67, $20k Social Security",
-        "ss_benefit": 20_000,
-        "married": False,
-    },
-    "married_seniors_40k_ss": {
-        "label": "Married couple, aged 67, $40k combined Social Security",
-        "ss_benefit": 40_000,
-        "married": True,
-    },
+# Household inputs mirror the reform's levers: HR 904 changes the taxation of
+# Social Security benefits, and how much of a benefit is taxed under current
+# law depends on the benefit amount, filing status, and other (non-SS) income
+# entering combined income. The grid sweeps all three.
+SS_BENEFIT_POINTS = {
+    "single": list(range(10_000, 50_001, 5_000)),
+    "married": list(range(20_000, 70_001, 5_000)),
 }
 OTHER_INCOME_POINTS = list(range(0, 150_001, 5_000))
+
+# Representative precomputed cases, each mapping to a grid point. The average
+# retired-worker benefit is ~$2k/month (~$24k/yr) in 2026; couples roughly 2x.
+HOUSEHOLD_PRESETS = [
+    {
+        "id": "average_single",
+        "label": "Average single retiree",
+        "description": "Average retirement benefit (~$2,000/month) plus modest savings income.",
+        "filing": "single",
+        "ss_benefit": 25_000,
+        "other_income": 10_000,
+    },
+    {
+        "id": "average_couple",
+        "label": "Average retired couple",
+        "description": "Two average benefits with a small pension.",
+        "filing": "married",
+        "ss_benefit": 50_000,
+        "other_income": 20_000,
+    },
+    {
+        "id": "working_senior",
+        "label": "Senior still working part-time",
+        "description": "A $20k benefit alongside $40k of earnings — combined income puts benefits in the taxable range.",
+        "filing": "single",
+        "ss_benefit": 20_000,
+        "other_income": 40_000,
+    },
+    {
+        "id": "higher_income_couple",
+        "label": "Higher-income couple",
+        "description": "Maximum-range benefits plus substantial pension and investment income (85% of benefits taxed under current law).",
+        "filing": "married",
+        "ss_benefit": 60_000,
+        "other_income": 100_000,
+    },
+]
 # NOTE: the economy endpoint no longer accepts an explicit `dataset` query param
 # ("enhanced_cps" is deprecated). Omitting it uses the certified PolicyEngine
 # bundle dataset — the same one that powers policyengine.org.
@@ -360,7 +392,7 @@ HOUSEHOLD_STATE = "TX"  # no state income tax -> isolates the federal SS-tax eff
 CALCULATE_TIMEOUT = 600
 
 
-def _build_situation(cfg: dict) -> dict:
+def _build_situation(ss: int, married: bool) -> dict:
     """Build a single situation holding one household per OTHER_INCOME_POINTS point.
 
     Each income point is an independent household (h_{i}) so the whole sweep is
@@ -369,8 +401,6 @@ def _build_situation(cfg: dict) -> dict:
     AGI (unlike ``pension_income``, which does not).
     """
     yr = str(TIME_PERIOD)
-    ss = cfg["ss_benefit"]
-    married = cfg["married"]
     people, tax_units, families, spm_units, marital_units, households = (
         {}, {}, {}, {}, {}, {},
     )
@@ -426,32 +456,37 @@ def _net_income_series(situation: dict, reform: dict | None) -> list[float]:
 
 
 def write_household(metadata: dict) -> None:
-    """household.json — baseline vs reform net-income series per example.
+    """household.json — baseline vs reform net-income grid over the reform's levers.
 
-    For each archetypal senior household, sweep other (non-SS) taxable income
-    and read household net income baseline vs HR 904 from the FAST /calculate
-    household endpoint (household-level, NOT a microsimulation — does not OOM).
+    The grid is keyed by filing status and Social Security benefit amount, each
+    holding a net-income series over other (non-SS) taxable income — read from
+    the FAST /calculate household endpoint (household-level, NOT a
+    microsimulation — does not OOM). One call per (filing status, benefit,
+    policy) keeps each request small.
     """
     with open(REFORM_PATH) as f:
         reform = json.load(f)
-    examples = {}
-    for key, cfg in HOUSEHOLD_EXAMPLES.items():
-        print(f"  computing household example: {key}")
-        situation = _build_situation(cfg)
-        baseline = _net_income_series(situation, reform=None)
-        reform_series = _net_income_series(situation, reform=reform)
-        examples[key] = {
-            "label": cfg["label"],
-            "ss_benefit": cfg["ss_benefit"],
-            "state": HOUSEHOLD_STATE,
-            "other_income": OTHER_INCOME_POINTS,
-            "baseline_net_income": baseline,
-            "reform_net_income": reform_series,
-        }
+    grid: dict[str, dict[str, dict]] = {}
+    for filing, ss_points in SS_BENEFIT_POINTS.items():
+        married = filing == "married"
+        grid[filing] = {}
+        for ss in ss_points:
+            print(f"  computing household grid: {filing} / ss={ss}")
+            situation = _build_situation(ss, married)
+            baseline = _net_income_series(situation, reform=None)
+            reform_series = _net_income_series(situation, reform=reform)
+            grid[filing][str(ss)] = {
+                "baseline_net_income": baseline,
+                "reform_net_income": reform_series,
+            }
     _write(
         HOUSEHOLD_PATH,
         {
-            "examples": examples,
+            "grid": grid,
+            "ss_benefit_points": SS_BENEFIT_POINTS,
+            "other_income": OTHER_INCOME_POINTS,
+            "presets": HOUSEHOLD_PRESETS,
+            "state": HOUSEHOLD_STATE,
             "metadata": {
                 "time_period": TIME_PERIOD,
                 "generated_at": metadata["generated_at"],
@@ -461,6 +496,17 @@ def write_household(metadata: dict) -> None:
 
 
 def main() -> None:
+    import sys
+
+    if "--household-only" in sys.argv:
+        # Regenerate only household.json (fast /calculate calls; skips the
+        # slow economy compute and leaves the other data files untouched).
+        print("Regenerating household.json only…")
+        write_household(
+            {"generated_at": dt.datetime.now(dt.timezone.utc).isoformat()}
+        )
+        return
+
     print("Fetching model metadata (versions + current-law parameters)…")
     api_metadata = fetch_metadata()
 

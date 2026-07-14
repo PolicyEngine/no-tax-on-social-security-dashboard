@@ -12,10 +12,16 @@ import {
   YAxis,
 } from 'recharts'
 import { ChartContainer, formatCurrency } from '@policyengine/ui-kit'
-import type { HouseholdSeries } from '@/lib/api/types'
+/** Self-contained plottable series: the grid point's arrays + axis + label. */
+export interface ChartSeries {
+  label: string
+  other_income: number[]
+  baseline_net_income: number[]
+  reform_net_income: number[]
+}
 
 interface Props {
-  series: HouseholdSeries
+  series: ChartSeries
   /** Other-income value currently selected on the slider (for the highlight dot). */
   highlightIncome?: number
 }
@@ -24,7 +30,7 @@ interface Props {
  * Builds one row per other-income point with baseline and reform net income.
  * Exported so tests can assert the series line up with the income sweep.
  */
-export function buildHouseholdRows(series: HouseholdSeries) {
+export function buildHouseholdRows(series: ChartSeries) {
   return series.other_income.map((other_income, i) => ({
     other_income,
     baseline_net_income: series.baseline_net_income[i],
@@ -33,7 +39,7 @@ export function buildHouseholdRows(series: HouseholdSeries) {
 }
 
 /** Index of the precomputed point nearest to a given other-income value. */
-export function nearestIndex(series: HouseholdSeries, otherIncome: number) {
+export function nearestIndex(series: ChartSeries, otherIncome: number) {
   return series.other_income.reduce(
     (best, v, i) =>
       Math.abs(v - otherIncome) < Math.abs(series.other_income[best] - otherIncome)
