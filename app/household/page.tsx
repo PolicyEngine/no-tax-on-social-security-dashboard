@@ -1,17 +1,20 @@
 'use client'
 
 import { useState } from 'react'
-import { MetricCard } from '@policyengine/ui-kit'
+import { MetricCard, SingleColumnLayout } from '@policyengine/ui-kit'
 import { useHousehold } from '@/lib/hooks/useCalculation'
 import { SiteHeader } from '@/components/SiteHeader'
 import { HouseholdControls } from '@/components/HouseholdControls'
-import { HouseholdNetIncomeChart } from '@/components/HouseholdNetIncomeChart'
+import {
+  HouseholdNetIncomeChart,
+  nearestIndex,
+} from '@/components/HouseholdNetIncomeChart'
 import type { HouseholdExampleId } from '@/lib/api/types'
 
 const DEFAULT_OTHER_INCOME = 30000
 
 export default function HouseholdPage() {
-  const { data: household } = useHousehold()
+  const { data: household, isLoading, isError } = useHousehold()
   const [example, setExample] = useState<HouseholdExampleId>(
     'single_senior_20k_ss',
   )
@@ -20,16 +23,7 @@ export default function HouseholdPage() {
   const series = household?.examples[example]
 
   // Nearest precomputed point to the slider value (no live compute).
-  const index = series
-    ? series.other_income.reduce(
-        (best, v, i) =>
-          Math.abs(v - otherIncome) <
-          Math.abs(series.other_income[best] - otherIncome)
-            ? i
-            : best,
-        0,
-      )
-    : 0
+  const index = series ? nearestIndex(series, otherIncome) : 0
   const gain = series
     ? series.reform_net_income[index] - series.baseline_net_income[index]
     : 0
@@ -41,10 +35,11 @@ export default function HouseholdPage() {
     : []
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <>
       <SiteHeader />
 
-      <main className="max-w-content mx-auto px-6 py-8 flex flex-col gap-8">
+      <SingleColumnLayout className="bg-background text-foreground">
+        <main className="flex flex-col gap-8">
         <header className="flex flex-col gap-2">
           <h1 className="text-3xl font-bold">
             How HR 904 affects example households
@@ -55,6 +50,15 @@ export default function HouseholdPage() {
             (non-SS) taxable income.
           </p>
         </header>
+
+        {isLoading && (
+          <p className="text-muted-foreground">Loading household examples…</p>
+        )}
+        {isError && (
+          <p className="text-error-foreground">
+            Could not load the household examples.
+          </p>
+        )}
 
         {household && series && (
           <>
@@ -82,11 +86,15 @@ export default function HouseholdPage() {
             </section>
 
             <section>
-              <HouseholdNetIncomeChart series={series} />
+              <HouseholdNetIncomeChart
+                series={series}
+                highlightIncome={otherIncome}
+              />
             </section>
           </>
         )}
-      </main>
-    </div>
+        </main>
+      </SingleColumnLayout>
+    </>
   )
 }

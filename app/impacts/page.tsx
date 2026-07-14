@@ -1,6 +1,6 @@
 'use client'
 
-import { MetricCard } from '@policyengine/ui-kit'
+import { MetricCard, SingleColumnLayout } from '@policyengine/ui-kit'
 import { useImpact } from '@/lib/hooks/useCalculation'
 import { SiteHeader } from '@/components/SiteHeader'
 import { WinnersLosersByDecileChart } from '@/components/WinnersLosersByDecileChart'
@@ -17,10 +17,11 @@ export default function ImpactsPage() {
   const { data: impact, isLoading, isError } = useImpact()
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <>
       <SiteHeader />
 
-      <main className="max-w-content mx-auto px-6 py-8 flex flex-col gap-8">
+      <SingleColumnLayout className="bg-background text-foreground">
+        <main className="flex flex-col gap-8">
         <header className="flex flex-col gap-2">
           <h1 className="text-3xl font-bold">Economic impact of HR 904 (2026)</h1>
           <p className="text-muted-foreground max-w-2xl">
@@ -63,6 +64,12 @@ export default function ImpactsPage() {
               />
             </section>
 
+            <p className="text-xs text-muted-foreground -mt-4 max-w-2xl">
+              The annual federal cost is the reduction in federal revenue, shown
+              here as a positive cost magnitude. A negative change in a poverty
+              rate means poverty falls under HR 904.
+            </p>
+
             <section className="flex flex-col gap-8">
               <WinnersLosersByDecileChart data={impact.intra_decile} />
               <AvgIncomeChangeByDecileChart data={impact.decile.average} />
@@ -77,7 +84,8 @@ export default function ImpactsPage() {
             </footer>
           </>
         )}
-      </main>
-    </div>
+        </main>
+      </SingleColumnLayout>
+    </>
   )
 }

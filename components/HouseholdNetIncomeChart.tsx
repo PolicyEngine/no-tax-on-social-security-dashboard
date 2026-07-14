@@ -5,6 +5,7 @@ import {
   Legend,
   Line,
   LineChart,
+  ReferenceDot,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -15,6 +16,8 @@ import type { HouseholdSeries } from '@/lib/api/types'
 
 interface Props {
   series: HouseholdSeries
+  /** Other-income value currently selected on the slider (for the highlight dot). */
+  highlightIncome?: number
 }
 
 /**
@@ -29,9 +32,22 @@ export function buildHouseholdRows(series: HouseholdSeries) {
   }))
 }
 
+/** Index of the precomputed point nearest to a given other-income value. */
+export function nearestIndex(series: HouseholdSeries, otherIncome: number) {
+  return series.other_income.reduce(
+    (best, v, i) =>
+      Math.abs(v - otherIncome) < Math.abs(series.other_income[best] - otherIncome)
+        ? i
+        : best,
+    0,
+  )
+}
+
 /** Net income by other income, baseline vs HR 904, for one example household. */
-export function HouseholdNetIncomeChart({ series }: Props) {
+export function HouseholdNetIncomeChart({ series, highlightIncome }: Props) {
   const rows = buildHouseholdRows(series)
+  const highlight =
+    highlightIncome != null ? rows[nearestIndex(series, highlightIncome)] : null
 
   return (
     <ChartContainer
@@ -44,6 +60,7 @@ export function HouseholdNetIncomeChart({ series }: Props) {
           <CartesianGrid stroke="var(--border)" vertical={false} />
           <XAxis
             dataKey="other_income"
+            type="number"
             niceTicks="snap125"
             domain={['auto', 'auto']}
             tickFormatter={(v: number) => formatCurrency(v)}
@@ -66,6 +83,7 @@ export function HouseholdNetIncomeChart({ series }: Props) {
             dataKey="baseline_net_income"
             name="Baseline"
             stroke="var(--chart-5)"
+            strokeWidth={2}
             dot={false}
           />
           <Line
@@ -73,8 +91,19 @@ export function HouseholdNetIncomeChart({ series }: Props) {
             dataKey="reform_net_income"
             name="Under HR 904"
             stroke="var(--chart-1)"
+            strokeWidth={2}
             dot={false}
           />
+          {highlight && (
+            <ReferenceDot
+              x={highlight.other_income}
+              y={highlight.reform_net_income}
+              r={5}
+              fill="var(--chart-1)"
+              stroke="var(--background)"
+              strokeWidth={2}
+            />
+          )}
         </LineChart>
       </ResponsiveContainer>
     </ChartContainer>

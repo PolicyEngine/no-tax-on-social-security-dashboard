@@ -55,10 +55,10 @@ export function PovertyByAgeGroupChart({ data }: Props) {
           <YAxis
             niceTicks="snap125"
             domain={['auto', 'auto']}
-            tickFormatter={(v: number) => formatPercent(v)}
+            tickFormatter={(v: number) => formatPercent(v, 1)}
             tick={{ fontSize: 12, fontFamily: 'var(--font-sans)' }}
           />
-          <Tooltip separator=": " formatter={(v) => formatPercent(Number(v))} />
+          <Tooltip separator=": " formatter={(v) => formatPercent(Number(v), 2)} />
           <Legend wrapperStyle={{ fontSize: 12, fontFamily: 'var(--font-sans)' }} />
           <Bar dataKey="baseline" name="Baseline" fill="var(--chart-5)" />
           <Bar dataKey="reform" name="Under HR 904" fill="var(--chart-1)" />

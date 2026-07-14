@@ -16,6 +16,37 @@ const CALIBRATION_DASHBOARD_URL = 'https://calibration-diagnostics.vercel.app'
  */
 export function CalibrationSection({ calibration }: Props) {
   const outOfTolerance = calibration.out_of_tolerance_targets
+  // The SSA target diagnostics are fetched at build time; guard against a
+  // not-yet-populated placeholder so the card never shows a misleading "0 / 0%".
+  const isPending =
+    !calibration.release_id ||
+    calibration.release_id.startsWith('TODO') ||
+    calibration.targets_checked === 0
+
+  if (isPending) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Data calibration (SSA)</CardTitle>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-3">
+          <p className="text-sm text-muted-foreground">
+            Live SSA calibration diagnostics are not yet available for this
+            build. When present, this section reports how many Social Security
+            calibration targets were checked and the share within tolerance.
+          </p>
+          <a
+            href={CALIBRATION_DASHBOARD_URL}
+            className="text-sm text-teal-500 hover:underline"
+            target="_blank"
+            rel="noreferrer"
+          >
+            PolicyEngine calibration dashboard
+          </a>
+        </CardContent>
+      </Card>
+    )
+  }
 
   return (
     <Card>

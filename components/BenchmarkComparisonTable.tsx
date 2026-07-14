@@ -13,6 +13,7 @@ interface Props {
 interface ComparisonRow {
   label: string
   value: number
+  note: string
 }
 
 /**
@@ -24,12 +25,25 @@ export function buildComparisonRows(
   benchmarks: Benchmark[],
 ): ComparisonRow[] {
   return [
-    { label: 'PolicyEngine (2026)', value: policyEngineValue },
-    ...benchmarks.map((b) => ({ label: b.label, value: b.value })),
+    {
+      label: 'PolicyEngine (2026)',
+      value: policyEngineValue,
+      note: 'This analysis — single-year 2026 static estimate.',
+    },
+    ...benchmarks.map((b) => ({
+      label: b.label,
+      value: b.value,
+      note:
+        b.note ??
+        [b.metric, b.year ? `${b.year}` : null].filter(Boolean).join(' · '),
+    })),
   ]
 }
 
-/** First-year cost of HR 904 next to external estimates. */
+/**
+ * First-year cost of HR 904 next to external estimates. The notes column flags
+ * that year- and dataset-specific figures are not directly comparable.
+ */
 export function BenchmarkComparisonTable({ policyEngineValue, benchmarks }: Props) {
   const rows = buildComparisonRows(
     policyEngineValue,
@@ -45,6 +59,13 @@ export function BenchmarkComparisonTable({ policyEngineValue, benchmarks }: Prop
           header: 'First-year revenue change',
           align: 'right',
           format: (v) => formatCurrency(Number(v)),
+        },
+        {
+          key: 'note',
+          header: 'Basis',
+          format: (v) => (
+            <span className="text-sm text-muted-foreground">{String(v)}</span>
+          ),
         },
       ]}
       data={rows}

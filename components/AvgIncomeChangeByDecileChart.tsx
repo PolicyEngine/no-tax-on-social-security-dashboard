@@ -1,15 +1,7 @@
 'use client'
 
-import {
-  Bar,
-  BarChart,
-  CartesianGrid,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from 'recharts'
-import { ChartContainer, formatCurrency } from '@policyengine/ui-kit'
+import { ChartContainer, PEImpactBarChart, formatCurrency } from '@policyengine/ui-kit'
+import type { ImpactBarDatum } from '@policyengine/ui-kit'
 import type { DecileMap } from '@/lib/api/types'
 
 interface Props {
@@ -24,9 +16,17 @@ export function buildAvgIncomeRows(data: DecileMap) {
   }))
 }
 
-/** Bar chart of the average $ change in household net income by income decile. */
+/**
+ * Average change in household net income by income decile — the canonical
+ * PolicyEngine impact bar chart (`PEImpactBarChart`), which colours gains teal
+ * and losses red and formats the axis and bar labels as currency.
+ */
 export function AvgIncomeChangeByDecileChart({ data }: Props) {
-  const rows = buildAvgIncomeRows(data)
+  const chartData: ImpactBarDatum[] = buildAvgIncomeRows(data).map((row) => ({
+    name: String(row.decile),
+    value: row.value,
+    hoverText: `Decile ${row.decile}: ${formatCurrency(row.value)}`,
+  }))
 
   return (
     <ChartContainer
@@ -34,29 +34,13 @@ export function AvgIncomeChangeByDecileChart({ data }: Props) {
       subtitle="Mean change in annual net income per household (2026)"
       downloadFilename="avg-income-change-by-decile"
     >
-      <ResponsiveContainer width="100%" height={360}>
-        <BarChart data={rows} margin={{ top: 8, right: 8, bottom: 8, left: 8 }}>
-          <CartesianGrid stroke="var(--border)" vertical={false} />
-          <XAxis
-            dataKey="decile"
-            niceTicks="snap125"
-            domain={['auto', 'auto']}
-            tick={{ fontSize: 12, fontFamily: 'var(--font-sans)' }}
-          />
-          <YAxis
-            niceTicks="snap125"
-            domain={['auto', 'auto']}
-            tickFormatter={(v: number) => formatCurrency(v)}
-            tick={{ fontSize: 12, fontFamily: 'var(--font-sans)' }}
-          />
-          <Tooltip
-            separator=": "
-            labelFormatter={(label) => `Decile ${label}`}
-            formatter={(v) => formatCurrency(Number(v))}
-          />
-          <Bar dataKey="value" name="Average change in net income" fill="var(--chart-1)" />
-        </BarChart>
-      </ResponsiveContainer>
+      <PEImpactBarChart
+        data={chartData}
+        xAxisLabel="Income decile"
+        yAxisLabel="Average change in net income"
+        yTickFormatter={formatCurrency}
+        barLabelFormatter={formatCurrency}
+      />
     </ChartContainer>
   )
 }
