@@ -5,6 +5,12 @@
 // v1 API (reform policy id 97925, 2026, enhanced CPS). The frontend imports it
 // directly; there is no runtime backend.
 import impactData from '../../public/data/impact.json'
-import type { Impact } from './types'
+import parametersData from '../../public/data/parameters.json'
+import validationData from '../../public/data/validation.json'
+import householdData from '../../public/data/household.json'
+import type { Impact, Parameters, Validation, Household } from './types'
 
 export const impact = impactData as unknown as Impact
+export const parameters = parametersData as unknown as Parameters
+export const validation = validationData as unknown as Validation
+export const household = householdData as unknown as Household

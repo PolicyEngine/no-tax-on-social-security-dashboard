@@ -28,12 +28,64 @@ from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 REFORM_PATH = REPO_ROOT / "reform.json"
-OUTPUT_PATH = REPO_ROOT / "public" / "data" / "impact.json"
+DATA_DIR = REPO_ROOT / "public" / "data"
+OUTPUT_PATH = DATA_DIR / "impact.json"
+PARAMETERS_PATH = DATA_DIR / "parameters.json"
+VALIDATION_PATH = DATA_DIR / "validation.json"
+HOUSEHOLD_PATH = DATA_DIR / "household.json"
 
 API_BASE = "https://api.policyengine.org"
+CALIBRATION_API_BASE = "https://calibration-diagnostics.vercel.app"
 COUNTRY = "us"
 REGION = "us"
 TIME_PERIOD = 2026
+
+# Reform parameter paths (all set to 0 by HR 904, effective 2026-01-01).
+REFORM_PARAMS = [
+    "gov.irs.social_security.taxability.rate.base.excess",
+    "gov.irs.social_security.taxability.rate.base.benefit_cap",
+    "gov.irs.social_security.taxability.rate.additional.excess",
+    "gov.irs.social_security.taxability.rate.additional.benefit_cap",
+    "gov.irs.social_security.taxability.rate.additional.bracket",
+]
+
+# External / prior benchmarks for the validation page (year-matched anchors).
+BENCHMARKS = [
+    {
+        "source": "CRFB",
+        "label": "Committee for a Responsible Federal Budget",
+        "metric": "First-year revenue loss",
+        "value": -94_000_000_000,
+        "approximate": True,
+        "note": "~$94B first-year estimate.",
+    },
+    {
+        "source": "PolicyEngine (prior published)",
+        "label": "PolicyEngine prior single-year score",
+        "metric": "Single-year revenue loss",
+        "value": -98_900_000_000,
+        "year": 2025,
+        "note": (
+            "$98.9B for 2025; NOT directly comparable to the 2026 figure "
+            "(different year, dataset version)."
+        ),
+    },
+]
+
+# Archetypal senior households swept over other (non-SS) taxable income.
+HOUSEHOLD_EXAMPLES = {
+    "single_senior_20k_ss": {
+        "label": "Single filer, aged 67, $20k Social Security",
+        "ss_benefit": 20_000,
+        "married": False,
+    },
+    "married_seniors_40k_ss": {
+        "label": "Married couple, aged 67, $40k combined Social Security",
+        "ss_benefit": 40_000,
+        "married": True,
+    },
+}
+OTHER_INCOME_POINTS = list(range(0, 150_001, 5_000))
 # NOTE: the economy endpoint no longer accepts an explicit `dataset` query param
 # ("enhanced_cps" is deprecated). Omitting it uses the certified PolicyEngine
 # bundle dataset — the same one that powers policyengine.org.
@@ -136,6 +188,109 @@ def trim(result: dict) -> dict:
     }
 
 
+def _write(path: Path, obj: dict) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with open(path, "w") as f:
+        json.dump(obj, f, indent=2)
+        f.write("\n")
+    print(f"Wrote {path}")
+
+
+def write_parameters(metadata: dict) -> None:
+    """parameters.json — the five reform params with current-law values.
+
+    TODO(backend-builder): fetch each current-law value at 2026 from
+    GET {API_BASE}/us/parameter/{param} (authoritative, never hardcoded).
+    This stub emits placeholder current-law rates so the frontend builds.
+    """
+    placeholder_current_law = {
+        "gov.irs.social_security.taxability.rate.base.excess": 0.5,
+        "gov.irs.social_security.taxability.rate.base.benefit_cap": 0.5,
+        "gov.irs.social_security.taxability.rate.additional.excess": 0.85,
+        "gov.irs.social_security.taxability.rate.additional.benefit_cap": 0.85,
+        "gov.irs.social_security.taxability.rate.additional.bracket": 0.85,
+    }
+    rows = [
+        {
+            "parameter": p,
+            "current_law": placeholder_current_law[p],
+            "reform_value": 0,
+            "effective": "2026-01-01",
+        }
+        for p in REFORM_PARAMS
+    ]
+    _write(
+        PARAMETERS_PATH,
+        {
+            "rows": rows,
+            "metadata": {
+                "time_period": TIME_PERIOD,
+                "generated_at": metadata["generated_at"],
+            },
+        },
+    )
+
+
+def write_validation(metadata: dict) -> None:
+    """validation.json — benchmarks, versions, and the SSA calibration check.
+
+    TODO(backend-builder): fetch the live SSA calibration diagnostics from
+    GET {CALIBRATION_API_BASE}/calibration/dashboard/api/populace/target-diagnostics?source=ssa
+    and populate release_id / targets_checked / share_within_tolerance /
+    out_of_tolerance_targets. This stub emits an empty calibration block.
+    """
+    _write(
+        VALIDATION_PATH,
+        {
+            "benchmarks": BENCHMARKS,
+            "calibration": {
+                "release_id": "TODO-ssa-release-id",
+                "targets_checked": 0,
+                "share_within_tolerance": 0,
+                "out_of_tolerance_targets": [],
+            },
+            "metadata": metadata,
+        },
+    )
+
+
+def write_household(metadata: dict) -> None:
+    """household.json — baseline vs reform net-income series per example.
+
+    TODO(backend-builder): for each example household x each other-income point,
+    POST {API_BASE}/us/calculate (baseline) and with the reform, and read
+    household net income. Uses the FAST /household-style endpoint — NOT a
+    microsimulation (does not OOM). This stub emits placeholder linear series.
+    """
+    examples = {}
+    for key, cfg in HOUSEHOLD_EXAMPLES.items():
+        ss = cfg["ss_benefit"]
+        std = 30_000 if cfg["married"] else 15_000
+        baseline, reform = [], []
+        for oi in OTHER_INCOME_POINTS:
+            gross = oi + ss
+            taxable_base = max(gross - std, 0)
+            ss_taxed = min(0.85 * ss, taxable_base)
+            baseline.append(round(gross - 0.12 * taxable_base, 2))
+            reform.append(round(gross - 0.12 * max(taxable_base - ss_taxed, 0), 2))
+        examples[key] = {
+            "label": cfg["label"],
+            "other_income": OTHER_INCOME_POINTS,
+            "baseline_net_income": baseline,
+            "reform_net_income": reform,
+        }
+    _write(
+        HOUSEHOLD_PATH,
+        {
+            "examples": examples,
+            "metadata": {
+                "time_period": TIME_PERIOD,
+                "generated_at": metadata["generated_at"],
+            },
+        },
+    )
+
+
 def main() -> None:
     print("Creating reform policy via the hosted PolicyEngine API…")
     policy_id = create_reform_policy()
@@ -144,7 +299,7 @@ def main() -> None:
     print(f"Fetching economy-wide impact for {TIME_PERIOD} (polling until 'ok')…")
     result = fetch_economy_impact(policy_id)
     impact = trim(result)
-    impact["metadata"] = {
+    metadata = {
         "time_period": TIME_PERIOD,
         "region": REGION,
         "dataset": result.get("data_version") or "policyengine-bundle",
@@ -153,12 +308,14 @@ def main() -> None:
         "reform_policy_id": policy_id,
         "generated_at": dt.datetime.now(dt.timezone.utc).isoformat(),
     }
+    impact["metadata"] = metadata
 
-    OUTPUT_PATH.parent.mkdir(parents=True, exist_ok=True)
-    with open(OUTPUT_PATH, "w") as f:
-        json.dump(impact, f, indent=2)
-        f.write("\n")
-    print(f"Wrote {OUTPUT_PATH}")
+    _write(OUTPUT_PATH, impact)
+
+    # New four-page dashboard outputs (policy, validation, household).
+    write_parameters(metadata)
+    write_validation(metadata)
+    write_household(metadata)
 
 
 if __name__ == "__main__":

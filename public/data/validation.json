@@ -1,0 +1,35 @@
+{
+  "benchmarks": [
+    {
+      "source": "CRFB",
+      "label": "Committee for a Responsible Federal Budget",
+      "metric": "First-year revenue loss",
+      "value": -94000000000,
+      "approximate": true,
+      "note": "~$94B first-year estimate."
+    },
+    {
+      "source": "PolicyEngine (prior published)",
+      "label": "PolicyEngine prior single-year score",
+      "metric": "Single-year revenue loss",
+      "value": -98900000000,
+      "year": 2025,
+      "note": "$98.9B for 2025; NOT directly comparable to the 2026 figure (different year, dataset version)."
+    }
+  ],
+  "calibration": {
+    "release_id": "TODO-ssa-release-id",
+    "targets_checked": 0,
+    "share_within_tolerance": 0,
+    "out_of_tolerance_targets": []
+  },
+  "metadata": {
+    "time_period": 2026,
+    "region": "us",
+    "dataset": "TODO-dataset-version",
+    "api_base": "https://api.policyengine.org",
+    "baseline_policy_id": 2,
+    "reform_policy_id": 97925,
+    "generated_at": "2026-07-14T12:29:10.878880+00:00"
+  }
+}

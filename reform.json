@@ -1,7 +1,1 @@
-{
-  "gov.irs.social_security.taxability.rate.base.excess": { "2026-01-01.2100-12-31": 0 },
-  "gov.irs.social_security.taxability.rate.base.benefit_cap": { "2026-01-01.2100-12-31": 0 },
-  "gov.irs.social_security.taxability.rate.additional.excess": { "2026-01-01.2100-12-31": 0 },
-  "gov.irs.social_security.taxability.rate.additional.benefit_cap": { "2026-01-01.2100-12-31": 0 },
-  "gov.irs.social_security.taxability.rate.additional.bracket": { "2026-01-01.2100-12-31": 0 }
-}
+{"gov.irs.social_security.taxability.rate.base.excess": {"2026-01-01.2100-12-31": 0}, "gov.irs.social_security.taxability.rate.base.benefit_cap": {"2026-01-01.2100-12-31": 0}, "gov.irs.social_security.taxability.rate.additional.excess": {"2026-01-01.2100-12-31": 0}, "gov.irs.social_security.taxability.rate.additional.benefit_cap": {"2026-01-01.2100-12-31": 0}, "gov.irs.social_security.taxability.rate.additional.bracket": {"2026-01-01.2100-12-31": 0}}

@@ -1,0 +1,38 @@
+{
+  "rows": [
+    {
+      "parameter": "gov.irs.social_security.taxability.rate.base.excess",
+      "current_law": 0.5,
+      "reform_value": 0,
+      "effective": "2026-01-01"
+    },
+    {
+      "parameter": "gov.irs.social_security.taxability.rate.base.benefit_cap",
+      "current_law": 0.5,
+      "reform_value": 0,
+      "effective": "2026-01-01"
+    },
+    {
+      "parameter": "gov.irs.social_security.taxability.rate.additional.excess",
+      "current_law": 0.85,
+      "reform_value": 0,
+      "effective": "2026-01-01"
+    },
+    {
+      "parameter": "gov.irs.social_security.taxability.rate.additional.benefit_cap",
+      "current_law": 0.85,
+      "reform_value": 0,
+      "effective": "2026-01-01"
+    },
+    {
+      "parameter": "gov.irs.social_security.taxability.rate.additional.bracket",
+      "current_law": 0.85,
+      "reform_value": 0,
+      "effective": "2026-01-01"
+    }
+  ],
+  "metadata": {
+    "time_period": 2026,
+    "generated_at": "2026-07-14T12:29:10.878880+00:00"
+  }
+}
