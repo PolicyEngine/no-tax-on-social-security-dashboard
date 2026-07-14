@@ -1,15 +1,17 @@
 'use client'
 
 import { SelectInput, SliderInput, formatCurrency } from '@policyengine/ui-kit'
-import type { HouseholdExampleId } from '@/lib/api/types'
+import type { FilingStatus } from '@/lib/api/types'
 
 interface Props {
-  example: HouseholdExampleId
-  onExampleChange: (id: HouseholdExampleId) => void
+  filing: FilingStatus
+  onFilingChange: (f: FilingStatus) => void
+  ssBenefit: number
+  onSsBenefitChange: (value: number) => void
+  /** Precomputed SS benefit grid for the current filing status. */
+  ssBenefitPoints: number[]
   otherIncome: number
   onOtherIncomeChange: (value: number) => void
-  /** Options for the example-household selector (label + id). */
-  exampleOptions: { value: HouseholdExampleId; label: string }[]
 }
 
 /** Other-taxable-income slider bounds — matches the precomputed sweep. */
@@ -17,25 +19,50 @@ export const OTHER_INCOME_MIN = 0
 export const OTHER_INCOME_MAX = 150000
 export const OTHER_INCOME_STEP = 5000
 
+const FILING_OPTIONS: { value: FilingStatus; label: string }[] = [
+  { value: 'single', label: 'Single filer, aged 67' },
+  { value: 'married', label: 'Married couple, both aged 67' },
+]
+
 /**
- * Controls for the household-example page: pick an archetypal senior household
- * and its other (non-SS) taxable income. The slider selects among precomputed
- * points in household.json — there is no live compute.
+ * Household inputs mirror the reform's levers. HR 904 changes how Social
+ * Security benefits are taxed, and the current-law tax depends on filing
+ * status, the benefit amount, and other income entering combined income —
+ * so those are the three controls. Sliders select among precomputed grid
+ * points in household.json; there is no live compute.
  */
 export function HouseholdControls({
-  example,
-  onExampleChange,
+  filing,
+  onFilingChange,
+  ssBenefit,
+  onSsBenefitChange,
+  ssBenefitPoints,
   otherIncome,
   onOtherIncomeChange,
-  exampleOptions,
 }: Props) {
+  const ssMin = ssBenefitPoints[0]
+  const ssMax = ssBenefitPoints[ssBenefitPoints.length - 1]
+
   return (
     <div className="flex flex-col gap-4">
       <SelectInput
-        label="Example household"
-        value={example}
-        onChange={(v) => onExampleChange(v as HouseholdExampleId)}
-        options={exampleOptions}
+        label="Filing status"
+        value={filing}
+        onChange={(v) => onFilingChange(v as FilingStatus)}
+        options={FILING_OPTIONS}
+      />
+      <SliderInput
+        label={
+          filing === 'married'
+            ? 'Combined annual Social Security benefits'
+            : 'Annual Social Security benefit'
+        }
+        value={ssBenefit}
+        onChange={onSsBenefitChange}
+        min={ssMin}
+        max={ssMax}
+        step={5000}
+        formatValue={(v) => formatCurrency(v)}
       />
       <SliderInput
         label="Other taxable income (pension, wages, IRA)"

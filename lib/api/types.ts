@@ -128,25 +128,38 @@ export interface Validation {
 // Household examples — public/data/household.json
 // ---------------------------------------------------------------------------
 
-/** Identifier for a precomputed archetypal senior household. */
-export type HouseholdExampleId =
-  | 'single_senior_20k_ss'
-  | 'married_seniors_40k_ss'
+/** Filing status — the reform's first lever (taxation thresholds differ). */
+export type FilingStatus = 'single' | 'married'
 
-/** A single precomputed baseline-vs-reform series for one example household. */
+/** Baseline-vs-reform net income over the other-income sweep, at one
+ * (filing status, SS benefit) grid point. */
 export interface HouseholdSeries {
-  label: string
-  /** Other (non-SS) taxable income points swept, ascending. */
-  other_income: number[]
   /** Baseline net income at each other-income point. */
   baseline_net_income: number[]
   /** Net income under HR 904 at each other-income point. */
   reform_net_income: number[]
 }
 
-/** public/data/household.json — one series per example household. */
+/** A representative precomputed case mapping to one grid point. */
+export interface HouseholdPreset {
+  id: string
+  label: string
+  description: string
+  filing: FilingStatus
+  ss_benefit: number
+  other_income: number
+}
+
+/** public/data/household.json — net-income grid over the reform's levers
+ * (filing status x SS benefit x other income) plus representative presets. */
 export interface Household {
-  examples: Record<HouseholdExampleId, HouseholdSeries>
+  /** grid[filing][String(ss_benefit)] -> series over other_income. */
+  grid: Record<FilingStatus, Record<string, HouseholdSeries>>
+  ss_benefit_points: Record<FilingStatus, number[]>
+  /** Other (non-SS) taxable income points swept, ascending. */
+  other_income: number[]
+  presets: HouseholdPreset[]
+  state: string
   metadata: {
     time_period: number
     generated_at: string
