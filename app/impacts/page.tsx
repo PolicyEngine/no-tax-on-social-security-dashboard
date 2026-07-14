@@ -1,8 +1,8 @@
 'use client'
 
-import { MetricCard, SingleColumnLayout } from '@policyengine/ui-kit'
+import { MetricCard } from '@policyengine/ui-kit'
 import { useImpact } from '@/lib/hooks/useCalculation'
-import { SiteHeader } from '@/components/SiteHeader'
+import { PageShell } from '@/components/PageShell'
 import { WinnersLosersByDecileChart } from '@/components/WinnersLosersByDecileChart'
 import { AvgIncomeChangeByDecileChart } from '@/components/AvgIncomeChangeByDecileChart'
 import { PovertyByAgeGroupChart } from '@/components/PovertyByAgeGroupChart'
@@ -18,12 +18,10 @@ export default function ImpactsPage() {
 
   return (
     <>
-      <SiteHeader />
-
-      <SingleColumnLayout className="bg-background text-foreground">
-        <main className="flex flex-col gap-8">
+      <PageShell>
+        <div className="flex flex-col gap-8">
         <header className="flex flex-col gap-2">
-          <h1 className="text-3xl font-bold">Economic impact of HR 904 (2026)</h1>
+          <h2 className="text-2xl font-bold">Economic impact of HR 904 (2026)</h2>
           <p className="text-muted-foreground max-w-2xl">
             Budgetary cost, poverty effects, and the distribution of gains across
             the income distribution (2026).
@@ -84,8 +82,8 @@ export default function ImpactsPage() {
             </footer>
           </>
         )}
-        </main>
-      </SingleColumnLayout>
+        </div>
+      </PageShell>
     </>
   )
 }

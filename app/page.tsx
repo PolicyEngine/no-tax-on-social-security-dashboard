@@ -1,8 +1,7 @@
 'use client'
 
-import { SingleColumnLayout } from '@policyengine/ui-kit'
 import { useParameters } from '@/lib/hooks/useCalculation'
-import { SiteHeader } from '@/components/SiteHeader'
+import { PageShell } from '@/components/PageShell'
 import { ParameterTable } from '@/components/ParameterTable'
 
 const PRIMARY_SOURCES = [
@@ -17,12 +16,10 @@ export default function PolicyPage() {
 
   return (
     <>
-      <SiteHeader />
-
-      <SingleColumnLayout className="bg-background text-foreground">
-        <main className="flex flex-col gap-8">
+      <PageShell>
+        <div className="flex flex-col gap-8">
         <header className="flex flex-col gap-2">
-          <h1 className="text-3xl font-bold">What HR 904 changes</h1>
+          <h2 className="text-2xl font-bold">What HR 904 changes</h2>
           <p className="text-muted-foreground max-w-2xl">
             A plain-language, provision-by-provision explanation of HR 904, with
             links to the primary source and the parameter table derived from the
@@ -119,8 +116,8 @@ export default function PolicyPage() {
           )}
           {parameters && <ParameterTable rows={parameters.rows} />}
         </section>
-        </main>
-      </SingleColumnLayout>
+        </div>
+      </PageShell>
     </>
   )
 }
