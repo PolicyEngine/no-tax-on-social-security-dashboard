@@ -34,16 +34,17 @@ export function SiteHeader() {
     <>
       <PolicyEngineHeader country="us" />
       <nav aria-label="Dashboard pages" className="border-b border-border bg-background">
-        <div className="mx-auto flex max-w-7xl gap-6 overflow-x-auto px-6">
+        {/* Container matches SingleColumnLayout (976px, px-4) so tabs align with page content */}
+        <div className="mx-auto flex gap-6 overflow-x-auto px-4" style={{ maxWidth: '976px' }}>
           {PAGES.map(({ label, href }) => (
             <Link
               key={href}
               href={href}
               aria-current={isActive(pathname, href) ? 'page' : undefined}
-              className={`whitespace-nowrap border-b-2 py-3 text-sm font-medium transition-colors ${
+              className={`-mb-px whitespace-nowrap border-b-2 py-3 text-sm font-medium transition-colors ${
                 isActive(pathname, href)
                   ? 'border-primary text-primary'
-                  : 'border-transparent text-muted-foreground hover:text-foreground'
+                  : 'border-transparent text-muted-foreground hover:border-border hover:text-foreground'
               }`}
             >
               {label}

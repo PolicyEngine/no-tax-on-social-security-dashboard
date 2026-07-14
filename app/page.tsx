@@ -96,7 +96,7 @@ export default function PolicyPage() {
               <li key={s.href}>
                 <a
                   href={s.href}
-                  className="text-teal-500 hover:underline"
+                  className="text-primary hover:underline"
                   target="_blank"
                   rel="noreferrer"
                 >

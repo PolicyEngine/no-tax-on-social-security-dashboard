@@ -37,7 +37,7 @@ export function CalibrationSection({ calibration }: Props) {
           </p>
           <a
             href={CALIBRATION_DASHBOARD_URL}
-            className="text-sm text-teal-500 hover:underline"
+            className="text-sm text-primary hover:underline"
             target="_blank"
             rel="noreferrer"
           >
@@ -89,7 +89,7 @@ export function CalibrationSection({ calibration }: Props) {
 
         <a
           href={CALIBRATION_DASHBOARD_URL}
-          className="text-sm text-teal-500 hover:underline"
+          className="text-sm text-primary hover:underline"
           target="_blank"
           rel="noreferrer"
         >
