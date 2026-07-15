@@ -125,7 +125,7 @@ export default function HouseholdPage() {
           <p className="text-muted-foreground max-w-2xl">
             The tax on Social Security benefits depends on filing status, the
             benefit amount, and other income entering combined income — so
-            those are the inputs. Start from a representative case, then
+            those are the inputs. Select an example household, then
             adjust. Every point is precomputed with PolicyEngine; there is no
             live compute.
           </p>
@@ -143,7 +143,7 @@ export default function HouseholdPage() {
         {household && series && (
           <>
             <section className="flex flex-col gap-3">
-              <h3 className="text-lg font-semibold">Representative households</h3>
+              <h3 className="text-lg font-semibold">Example households</h3>
               <PresetCards
                 presets={household.presets}
                 gains={presetGains}
