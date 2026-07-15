@@ -3,6 +3,8 @@
 import { MetricCard } from '@policyengine/ui-kit'
 import { useImpact } from '@/lib/hooks/useCalculation'
 import { PageShell } from '@/components/PageShell'
+import { Callout } from '@/components/Callout'
+import type { Impact } from '@/lib/api/types'
 import { WinnersLosersByDecileChart } from '@/components/WinnersLosersByDecileChart'
 import { AvgIncomeChangeByDecileChart } from '@/components/AvgIncomeChangeByDecileChart'
 import { PovertyByAgeGroupChart } from '@/components/PovertyByAgeGroupChart'
@@ -11,6 +13,35 @@ import { PovertyByAgeGroupChart } from '@/components/PovertyByAgeGroupChart'
 function relativeChange(rate: { baseline: number; reform: number }): number {
   if (!rate.baseline) return 0
   return (rate.reform - rate.baseline) / rate.baseline
+}
+
+function gainShare(impact: Impact): number {
+  const a = impact.intra_decile.all
+  return (a['Gain more than 5%'] ?? 0) + (a['Gain less than 5%'] ?? 0)
+}
+
+function noChangeShare(impact: Impact): number {
+  return impact.intra_decile.all['No change'] ?? 0
+}
+
+function decileAvg(impact: Impact, decile: number): number {
+  return impact.decile.average[String(decile)] ?? 0
+}
+
+function maxAbsPovertyChange(impact: Impact): number {
+  return Math.max(
+    ...Object.values(impact.poverty).map((r) =>
+      Math.abs(relativeChange(r)),
+    ),
+  )
+}
+
+function formatShare(v: number): string {
+  return `${(v * 100).toFixed(1)}%`
+}
+
+function formatDollars(v: number): string {
+  return `$${Math.round(v).toLocaleString('en-US')}`
 }
 
 export default function ImpactsPage() {
@@ -68,10 +99,47 @@ export default function ImpactsPage() {
               rate means poverty falls under HR 904.
             </p>
 
-            <section className="flex flex-col gap-8">
-              <WinnersLosersByDecileChart data={impact.intra_decile} />
-              <AvgIncomeChangeByDecileChart data={impact.decile.average} />
-              <PovertyByAgeGroupChart data={impact.poverty} />
+            <section className="flex flex-col gap-10">
+              <div className="flex flex-col gap-3">
+                <p className="max-w-2xl text-muted-foreground">
+                  {formatShare(gainShare(impact))} of households see higher net
+                  income in 2026; {formatShare(noChangeShare(impact))} see no
+                  change.
+                </p>
+                <WinnersLosersByDecileChart data={impact.intra_decile} />
+              </div>
+
+              <div className="flex flex-col gap-3">
+                <p className="max-w-2xl text-muted-foreground">
+                  Average gains rise with income, from{' '}
+                  {formatDollars(decileAvg(impact, 1))} in the lowest decile to{' '}
+                  {formatDollars(decileAvg(impact, 10))} in the highest.
+                </p>
+                <AvgIncomeChangeByDecileChart data={impact.decile.average} />
+              </div>
+
+              <div className="flex flex-col gap-3">
+                <p className="max-w-2xl text-muted-foreground">
+                  Poverty rates change by less than{' '}
+                  {formatShare(maxAbsPovertyChange(impact))} in every age group.
+                </p>
+                <PovertyByAgeGroupChart data={impact.poverty} />
+                <Callout
+                  eyebrow="Why senior poverty barely moves"
+                  headline="Eliminating the tax on Social Security benefits changes the senior poverty rate by less than 0.01 percentage points."
+                >
+                  Benefits become taxable only when combined income — adjusted
+                  gross income plus half of benefits — exceeds $25,000 for
+                  single filers or $32,000 for married couples. Seniors near
+                  the poverty threshold fall below those lines, pay no tax on
+                  their benefits under current law, and therefore gain $0 from
+                  HR 904. The senior poverty rate changes from{' '}
+                  {formatShare(impact.poverty.senior.baseline)} to{' '}
+                  {formatShare(impact.poverty.senior.reform)}. The Households
+                  tab isolates the mechanism: at a $25,000 benefit, gains are
+                  $0 until other income reaches about $15,000.
+                </Callout>
+              </div>
             </section>
 
             <footer className="text-xs text-muted-foreground border-t border-border pt-4">

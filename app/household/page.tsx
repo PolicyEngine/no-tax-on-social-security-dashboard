@@ -174,7 +174,12 @@ export default function HouseholdPage() {
               />
             </section>
 
-            <section>
+            <section className="flex flex-col gap-3">
+              <p className="max-w-2xl text-muted-foreground">
+                {gain > 0
+                  ? `This household's net income rises by $${Math.round(gain).toLocaleString('en-US')} in 2026 under HR 904.`
+                  : 'This household pays no tax on its benefits under current law, so HR 904 does not change its net income.'}
+              </p>
               <HouseholdNetIncomeChart
                 series={series}
                 highlightIncome={otherIncome}
