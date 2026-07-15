@@ -62,17 +62,17 @@ describe('Four-page dashboard', () => {
     }
   })
 
-  it('household page renders the representative presets and reform-lever controls from the real data', async () => {
+  it('household page renders the example presets and reform-lever controls from the real data', async () => {
     renderWithClient(<HouseholdPage />)
     // Preset cards (bundled household.json flows through the full page).
     expect(
-      await screen.findByRole('heading', { name: /representative households/i }),
+      await screen.findByRole('heading', { name: /^example households$/i }),
     ).toBeInTheDocument()
     for (const label of [
-      /average single retiree/i,
-      /average retired couple/i,
-      /senior still working part-time/i,
-      /higher-income couple/i,
+      /single filer, \$25,000 benefit/i,
+      /married couple, \$50,000 combined benefits/i,
+      /single filer, \$20,000 benefit and \$40,000 earnings/i,
+      /married couple, \$60,000 benefits and \$100,000 other income/i,
     ]) {
       expect(screen.getByText(label)).toBeInTheDocument()
     }

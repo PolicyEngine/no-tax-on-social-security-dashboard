@@ -21,9 +21,8 @@ export default function PolicyPage() {
         <header className="flex flex-col gap-2">
           <h2 className="text-2xl font-bold">What HR 904 changes</h2>
           <p className="text-muted-foreground max-w-2xl">
-            A plain-language, provision-by-provision explanation of HR 904, with
-            links to the primary source and the parameter table derived from the
-            reform JSON.
+            Each provision of HR 904, with links to the primary source and the
+            parameter table derived from the reform JSON.
           </p>
         </header>
 
@@ -62,8 +61,9 @@ export default function PolicyPage() {
               <span className="font-medium text-foreground">
                 Second-tier rate on income above the higher threshold (85%).
               </span>{' '}
-              For higher-income taxpayers, the share of benefits above the
-              second threshold that counts as taxable income rises to 85%.
+              For taxpayers with combined income above $34,000 (single) or
+              $44,000 (married filing jointly), the share of benefits above
+              the second threshold that counts as taxable income rises to 85%.
             </li>
             <li>
               <span className="font-medium text-foreground">
