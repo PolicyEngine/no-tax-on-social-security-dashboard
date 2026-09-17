@@ -42,3 +42,7 @@ make build
 - Vitest
 - Deployed to Vercel; embedded in policyengine.org as a multi-zone at
   `/us/no-tax-on-social-security-dashboard`
+
+## License
+
+Code in this repository is released under the [MIT License](LICENSE). Original text and figures are released under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) with attribution to PolicyEngine. Third-party data and materials keep their own terms.
