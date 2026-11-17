@@ -58,7 +58,7 @@ precomputed:
     # never hardcoded; reform values + effective dates come from reform.json.
     - "For each of the 5 reform params: GET {api_base}/us/parameter/{param} -> current-law value at 2026 -> parameters.json"
     # --- Data calibration (validation) ---------------------------------------
-    - "GET {calibration_api_base}/calibration/dashboard/api/populace/target-diagnostics?source=ssa -> validation.json.calibration"
+    - "GET {calibration_api_base}/calibration/dashboard/api/microcosm/target-diagnostics?source=ssa -> validation.json.calibration"
     # --- Household examples (household page) ----------------------------------
     # Fast household endpoint; sweep other-income for archetypal senior households.
     - "For each example household x each income point: POST {api_base}/us/calculate (baseline) and /calculate with reform -> household.json"
