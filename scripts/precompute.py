@@ -307,7 +307,7 @@ def fetch_ssa_calibration() -> dict:
     omission via ``available: False`` rather than failing the build.
     """
     url = (
-        f"{CALIBRATION_API_BASE}/calibration/dashboard/api/populace/"
+        f"{CALIBRATION_API_BASE}/calibration/dashboard/api/microcosm/"
         f"target-diagnostics?source=ssa"
     )
     try:
